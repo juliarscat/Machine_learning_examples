@@ -1,0 +1,84 @@
+#  Importació de llibreries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import graphviz
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import export_graphviz
+from sklearn.metrics import classification_report
+import warnings
+warnings.filterwarnings('ignore')
+
+#  Funció per decidir acció (segons el context del món de Mario)
+def decidir_accio(te_flor, te_estel, enemic_a_prop, precipici, bloc_misterios, tub_vermell):
+   if te_estel:
+       return 'evadir'
+   if te_flor and enemic_a_prop:
+       return 'atacar'
+   if bloc_misterios or tub_vermell:
+       return 'explorar'
+   if precipici:
+       return 'precaució'
+   return 'esperar'
+
+# Generació del dataset
+np.random.seed(42)
+n_mostres = 100
+data = {
+   'te_flor':         np.random.randint(0, 2, n_mostres),
+   'te_estel':        np.random.randint(0, 2, n_mostres),
+   'enemic_a_prop':   np.random.randint(0, 2, n_mostres),
+   'precipici':       np.random.randint(0, 2, n_mostres),
+   'bloc_misterios':  np.random.randint(0, 2, n_mostres),
+   'tub_vermell':     np.random.randint(0, 2, n_mostres)
+}
+df = pd.DataFrame(data)
+df['accio'] = df.apply(lambda row: decidir_accio(
+   row['te_flor'],
+   row['te_estel'],
+   row['enemic_a_prop'],
+   row['precipici'],
+   row['bloc_misterios'],
+   row['tub_vermell']
+), axis=1)
+
+#  Divisió en variables predictors i objectiu
+X = df.drop('accio', axis=1)
+y = df['accio']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+#  Entrenament de Random Forest
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Predicció i avaluació
+y_pred = model.predict(X_test)
+print(classification_report(y_test, y_pred, zero_division=0))
+
+# Gràfic de la importància de cada variable
+importances = model.feature_importances_
+features = X.columns
+plt.figure(figsize=(8, 4))
+sns.barplot(x=importances, y=features)
+plt.title("Importància de cada característica en la decisió de Mario")
+plt.xlabel("Importància")
+plt.ylabel("Característica")
+plt.tight_layout()
+plt.show()
+
+#  Visualització d’un arbre de decisió del bosc
+arbre = model.estimators_[0]
+dot_data = export_graphviz(
+   arbre,
+   out_file=None,
+   feature_names=X.columns,
+   class_names=model.classes_,
+   filled=True,
+   rounded=True,
+   special_characters=True
+)
+graf = graphviz.Source(dot_data)
+graf.render("arbre_mario", format="png", cleanup=True)
+graf.view()
