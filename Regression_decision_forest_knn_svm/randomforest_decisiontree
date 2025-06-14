@@ -1,0 +1,70 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from collections import Counter
+
+# Llegim el dataset
+df = pd.read_csv("dataset_alumnes_equilibrat.csv")
+
+# Variables
+X = df[["Matemàtiques", "Castellà", "Història"]]
+y = df["Aprovat"]
+
+# Dividim el dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# --------- Arbre de decisió ----------
+arbre = DecisionTreeClassifier(max_depth=3, random_state=42)
+arbre.fit(X_train, y_train)
+pred_arbre = arbre.predict(X_test)
+acc_arbre = accuracy_score(y_test, pred_arbre)
+print(f"Precisió arbre de decisió: {acc_arbre}")
+
+# Gràfic arbre
+plt.figure(figsize=(12, 6))
+plot_tree(arbre, feature_names=X.columns, class_names=["Suspès", "Aprovat"], filled=True)
+plt.title("🌳 Arbre de decisió")
+plt.show()
+
+# --------- Random Forest ----------
+bosc = RandomForestClassifier(n_estimators=10, random_state=42)
+bosc.fit(X_train, y_train)
+pred_bosc = bosc.predict(X_test)
+acc_bosc = accuracy_score(y_test, pred_bosc)
+print(f"Precisió Random Forest: {acc_bosc}")
+
+# Importància de característiques
+importancies = bosc.feature_importances_
+plt.figure(figsize=(8, 5))
+plt.bar(X.columns, importancies)
+plt.title("📊 Importància de les assignatures")
+plt.ylabel("Pes relatiu")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Visualització de dos arbres del bosc
+fig, axs = plt.subplots(1, 2, figsize=(16, 6))
+plot_tree(bosc.estimators_[0], feature_names=X.columns, class_names=["Suspès", "Aprovat"], filled=True, ax=axs[0])
+axs[0].set_title("Arbre 1 del Random Forest")
+
+plot_tree(bosc.estimators_[1], feature_names=X.columns, class_names=["Suspès", "Aprovat"], filled=True, ax=axs[1])
+axs[1].set_title("Arbre 2 del Random Forest")
+plt.tight_layout()
+plt.show()
+
+# Com voten els arbres per un cas concret
+cas_mostra = X_test.iloc[[0]]
+vots = [arbre.predict(cas_mostra)[0] for arbre in bosc.estimators_]
+vots_comptats = Counter(vots)
+prediccio_final = bosc.predict(cas_mostra)[0]
+
+print(f"Cas concret: {cas_mostra.to_dict(orient='records')[0]}")
+print(f"Vots dels arbres: {vots_comptats}")
+print(f"Predicció final del bosc: {prediccio_final}")
+
