@@ -1,0 +1,52 @@
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
+import graphviz
+import pandas as pd
+import numpy as np
+
+data = {
+    'es_de_nit':             [0, 0, 1, 1, 0, 1, 1, 0, 1, 0],
+    'fa_fred':               [1, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+    'tens_gana':            [1, 0, 1, 0, 1, 1, 1, 0, 0, 1],
+    'nivell_estrès':        [3, 1, 2, 0, 3, 2, 1, 2, 0, 1],
+    'amigues_a_casa':       [1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
+    'tens_postres_guardats':[0, 0, 1, 0, 1, 1, 0, 0, 0, 1],
+    'acabes_de_sopar':      [0, 1, 0, 1, 0, 0, 1, 1, 1, 0]
+}
+
+target = [
+    'pizza',     # gana, fred, nit
+    'res',       # sense gana
+    'xocolata',  # gana, nit, tens postres
+    'res',       # sense gana
+    'gelat',     # fred però tens postres
+    'croquetes', # gana, nit, amigues
+    'pa_amb_tomàquet', # gana, sense amigues
+    'iogurt',    # sense gana però estrès
+    'sopa',      # fa fred, post_sopar
+    'galetes'    # ganes i tens postres
+]
+
+df = pd.DataFrame(data)
+X = df
+y = target
+
+# Arbre 
+clf = DecisionTreeClassifier(criterion='entropy', max_depth=6, random_state=42)
+clf = clf.fit(X, y)
+
+# Crear l'arbre amb Graphviz
+dot_data = export_graphviz(
+    clf,
+    out_file=None,
+    feature_names=X.columns,
+    class_names=np.unique(y),
+    filled=True,
+    rounded=True,
+    special_characters=True
+)
+graph = graphviz.Source(dot_data)
+graph.format = 'png'
+graph.render('arbre_decisio_menjar_gracios.png', cleanup=False)
+
+graph  
+
