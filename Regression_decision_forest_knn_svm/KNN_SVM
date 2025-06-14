@@ -1,0 +1,77 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
+
+# Llegim el dataset
+df = pd.read_csv("dataset_alumnes_equilibrat.csv")
+
+# Preparem variables
+X = df[["Matemàtiques", "Castellà"]]
+y = df["Aprovat"]
+
+# Escalem les dades (KNN i SVM són sensibles a l’escala)
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Dividim en entrenament i test
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+# --------------------------
+# MODEL 1: KNN
+# --------------------------
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(X_train, y_train)
+pred_knn = knn.predict(X_test)
+acc_knn = accuracy_score(y_test, pred_knn)
+print(f"Precisió KNN: {acc_knn}")
+
+# --------------------------
+# MODEL 2: SVM lineal
+# --------------------------
+svm = SVC(kernel='linear', C=1.0)
+svm.fit(X_train, y_train)
+pred_svm = svm.predict(X_test)
+acc_svm = accuracy_score(y_test, pred_svm)
+print(f"Precisió SVM: {acc_svm}")
+
+# --------------------------
+# FUNCIONS DE VISUALITZACIÓ
+# --------------------------
+def plot_decision_boundary(model, X, y, title):
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 300),
+                         np.linspace(y_min, y_max, 300))
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    plt.figure(figsize=(8, 6))
+    plt.contourf(xx, yy, Z, alpha=0.4, cmap=plt.cm.Paired)
+    scatter = plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Set1, edgecolors='k')
+    plt.xlabel("Matemàtiques (escalat)")
+    plt.ylabel("Castellà (escalat)")
+    plt.title(title)
+    plt.legend(*scatter.legend_elements(), title="Aprovat")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+# Fronteres de decisió
+plot_decision_boundary(knn, X_scaled, y, "KNN (k=3) – Frontera de decisió")
+plot_decision_boundary(svm, X_scaled, y, "SVM lineal – Frontera de decisió")
+
+# Matrius de confusió
+fig, axs = plt.subplots(1, 2, figsize=(12, 5))
+ConfusionMatrixDisplay.from_predictions(y_test, pred_knn, ax=axs[0], display_labels=["Suspès", "Aprovat"], cmap="Blues")
+axs[0].set_title("Matriu Confusió – KNN")
+ConfusionMatrixDisplay.from_predictions(y_test, pred_svm, ax=axs[1], display_labels=["Suspès", "Aprovat"], cmap="Greens")
+axs[1].set_title("Matriu Confusió – SVM")
+plt.tight_layout()
+plt.show()
+
