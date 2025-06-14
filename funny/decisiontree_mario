@@ -1,0 +1,46 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+# Accions Mario
+data_mes_complex = {
+   'te_flor':         [1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1],
+   'te_estel':        [0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0],
+   'enemic_a_prop':   [1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1],
+   'precipici':       [0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0],
+   'bloc_misterios':  [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1],
+   'tub_vermell':     [0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0],
+   'accio': [
+       'disparar',
+       'córrer',
+       'anar amb compte',
+       'esperar',
+       'saltar',
+       'disparar',
+       'córrer',
+       'esperar',
+       'saltar',
+       'disparar',
+       'esperar',
+       'investigar',
+       'agafar el tub',
+       'pujar al bloc'
+   ]
+}
+
+# Convertim a DataFrame
+df_cat = pd.DataFrame(data_mes_complex)
+
+# Separació variables predictives i objectiu
+X_cat = df_cat.drop('accio', axis=1)
+y_cat = df_cat['accio']
+
+# Entrenament del model
+model_cat = DecisionTreeClassifier(max_depth=6, random_state=42)
+model_cat.fit(X_cat, y_cat)
+
+# Visualització de l'arbre de decisió
+plt.figure(figsize=(22, 12))
+plot_tree(model_cat, feature_names=X_cat.columns, class_names=y_cat.unique(), filled=True, rounded=True)
+plt.title("Arbre de Decisió de Mario")
+plt.show()
