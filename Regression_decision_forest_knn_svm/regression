@@ -1,0 +1,96 @@
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+
+# ---------------------------
+# 1. Llegim el dataset
+# ---------------------------
+df = pd.read_csv("dataset_alumnes_equilibrat.csv")
+
+# ---------------------------
+# 2. Variables
+# ---------------------------
+X = df[["Matemàtiques", "Castellà", "Història"]]
+y_lineal = df["Mitjana"]
+y_logistica = df["Aprovat"]
+
+# ---------------------------
+# 3. Divisió entrenament/test
+# ---------------------------
+X_train, X_test, y_train_lineal, y_test_lineal = train_test_split(X, y_lineal, test_size=0.2, random_state=42)
+_, _, y_train_log, y_test_log = train_test_split(X, y_logistica, test_size=0.2, random_state=42)
+
+# ---------------------------
+# 4. Regressió Lineal
+# ---------------------------
+model_lineal = LinearRegression()
+model_lineal.fit(X_train, y_train_lineal)
+pred_lineal = model_lineal.predict(X_test)
+mse = mean_squared_error(y_test_lineal, pred_lineal)
+
+print(f"MSE Regressió lineal: {round(mse, 3)}")
+
+plt.figure(figsize=(10, 6))
+plt.plot(y_test_lineal.values, label="Nota real", color='blue', marker='o')
+plt.plot(pred_lineal, label="Nota predita", color='red', marker='x')
+plt.title("📈 Regressió lineal: Notes mitjanes reals vs predites")
+plt.xlabel("Índex d'estudiant")
+plt.ylabel("Nota mitjana")
+plt.ylim(0, 10)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# ---------------------------
+# 5. Regressió Logística
+# ---------------------------
+model_logistic = LogisticRegression()
+model_logistic.fit(X_train, y_train_log)
+pred_logistic = model_logistic.predict(X_test)
+acc = accuracy_score(y_test_log, pred_logistic)
+report = classification_report(y_test_log, pred_logistic)
+
+print(f"Accuracy Regressió logística: {round(acc, 3)}")
+print("Classification report:")
+print(report)
+
+# Matriu de confusió
+cm = confusion_matrix(y_test_log, pred_logistic)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["Suspès", "Aprovat"])
+fig, ax = plt.subplots(figsize=(6, 6))
+disp.plot(ax=ax, cmap="Greens")
+plt.title("Regressió logística: Matriu de confusió")
+plt.grid(False)
+plt.show()
+
+# ---------------------------
+# 6. Frontera de decisió (2D)
+# ---------------------------
+X_2d = df[["Matemàtiques", "Castellà"]]
+y_2d = df["Aprovat"]
+model_logistic_2d = LogisticRegression()
+model_logistic_2d.fit(X_2d, y_2d)
+
+x_min, x_max = X_2d["Matemàtiques"].min() - 1, X_2d["Matemàtiques"].max() + 1
+y_min, y_max = X_2d["Castellà"].min() - 1, X_2d["Castellà"].max() + 1
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
+                     np.linspace(y_min, y_max, 100))
+Z = model_logistic_2d.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+plt.figure(figsize=(10, 6))
+plt.contourf(xx, yy, Z, cmap=plt.cm.Pastel2, alpha=0.6)
+scatter = plt.scatter(X_2d["Matemàtiques"], X_2d["Castellà"], c=y_2d, cmap=plt.cm.Set1, edgecolors='k')
+plt.xlabel("Nota Matemàtiques")
+plt.ylabel("Nota Castellà")
+plt.title("Regressió logística: Frontera de decisió")
+plt.legend(*scatter.legend_elements(), title="Aprovat")
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
